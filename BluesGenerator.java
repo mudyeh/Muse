@@ -123,11 +123,11 @@ public class BluesGenerator {
         int durationNum = StdRandom.uniform(0, numOptions);
         switch (durationNum) {
             case 0:
-                subBeatCount += 8;
-                return "q";
-            case 1:
                 subBeatCount += 4;
                 return "i";
+            case 1:
+                subBeatCount += 8;
+                return "q";
             case 2:
                 subBeatCount += 2;
                 return "s";
@@ -183,13 +183,15 @@ public class BluesGenerator {
         Intervals scale3 = MAJOR_BLUES.setRoot(root);
         Intervals curScale = scale3;
         String songString = root
-                +getOctaveNum(3, 5)
+                +getOctaveNum(4, 6)
                 +getDurationNum(4)
                 + " ";
 
         int measuresPlayed = 0;
         while (subBeatCount < getTotalSubBeats()) {
             if (measuresPlayed % 4 == 0) {
+                // Every 4 bars, randomly pick which scale to use
+                // Also randomly change the octave of the scale
                 int randInt = StdRandom.uniform(3);
                 if (randInt == 0) {
                     curScale = scale1;
@@ -198,10 +200,15 @@ public class BluesGenerator {
                 } else {
                     curScale = scale3;
                 }
+                curScale.setRoot(root + getOctaveNum(3, 5));
             }
+
+            // Convert the set of intervals into a List of Notes
+            List<Note> curScaleNotes = curScale.getNotes();
+
+            // Form the randomly chosen note
             songString = songString.concat(
-                    curScale.getNthInterval(StdRandom.uniform(curScale.size()))
-                    + getOctaveNum(3, 5)
+                    curScaleNotes.get(StdRandom.uniform(curScale.size()))
                     + getDurationNum(1)
                     + " ");
             measuresPlayed += 1;
@@ -235,12 +242,14 @@ public class BluesGenerator {
     }
 
     public static void main(String[] args) {
-        BluesGenerator b = new BluesGenerator(32, 140, "C",
+        BluesGenerator b = new BluesGenerator(16, 140, "C",
                 "electric_jazz_guitar", "overdriven_guitar");
 
+//        System.out.print(MAJOR_BLUES.setRoot("D").getNotes());
+//        System.out.print(MAJOR_BLUES.getNotes());
         Player p = new Player();
-//        Pattern rhythm = b.getBackingPattern();
+        Pattern rhythm = b.getBackingPattern();
         Pattern lead = b.getBluesLeadPattern();
-        p.play(lead);
+        p.play(rhythm.add(lead));
     }
 }
