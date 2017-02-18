@@ -21,8 +21,16 @@ public class BluesGenerator {
     private int subBeatCount = 0;
     private static final int LOWEST_DIVISION = 32;
     private TimeSignature ts = new TimeSignature(4, 4);
-//    public String chordProgression;
 
+    // For all of these, remember to set the root
+    public static final Intervals MAJOR = Scale.MAJOR.getIntervals();
+    public static final Intervals MINOR = Scale.MINOR.getIntervals();
+    public static final Intervals MAJOR_PENTATONIC = new Intervals("1 2 3 5 6");
+    public static final Intervals MINOR_PENTATONIC = new Intervals("1 b3 4 5 b7");
+    public static final Intervals MAJOR_BLUES = new Intervals("1 2 b3 3 5 6");
+    public static final Intervals MINOR_BLUES = new Intervals("1 b3 4 b5 5 b7");
+
+    //    public String chordProgression;
 
     public BluesGenerator(int measuresInForm, int tempo, String root,
                           String backingInstrument, String leadInstrument) {
@@ -38,7 +46,7 @@ public class BluesGenerator {
 
     /* Either uses common blues forms (8 bar, 12 bar, 16 bar) to return full chord progression
     or randomly creates a chord progression (more interesting) */
-    public String determineForm() {
+    private String determineForm() {
         if (measuresInForm == 12) {
             return "$0 $0 $0 $0 $1 $1 $0 $0 $2 $1 $0 $2";
         } else if (measuresInForm == 8) {
@@ -53,6 +61,26 @@ public class BluesGenerator {
             }
             return pattern;
         }
+    }
+
+    public Pattern getBackingPattern() {
+        ChordProgression cp = new ChordProgression("I IV V");
+        cp = cp.setKey(root)
+                .distribute("7%6")
+                .allChordsAs(determineForm());
+        Pattern root = cp.eachChordAs(replicate("$0ia60 ", 8))
+                .getPattern()
+                .setVoice(voiceNum)
+                .setTempo(tempo)
+                .setInstrument(backingInstrument);
+        voiceNum+=1;
+        Pattern top = cp.eachChordAs(replicate("$2ia80 $2ia80 $3ia90 $2ia80 ", 2))
+                .getPattern()
+                .setVoice(voiceNum)
+                .setTempo(tempo)
+                .setInstrument(backingInstrument);
+        voiceNum+=1;
+        return root.add(top);
     }
 
     // at some point should also return rests as well ***
@@ -123,18 +151,15 @@ public class BluesGenerator {
     }
 
     /* The more "computer music" melody generator:
-     * Randomly selects notes from chromatic scale for melody */
+     * Randomly selects notes from chromatic scale for melody
+     * Obviously doesn't sound good */
     public Pattern getRandomLeadPattern() {
-        int totalSubBeats = LOWEST_DIVISION
-                * measuresInForm
-                * ts.getBeatsPerMeasure()
-                / ts.getDurationForBeat();
         String songString = root
                 + getOctaveNum(3, 5)
                 + getDurationNum(4)
                 + " ";
         // currently hardcode what the ranges/numOptions are; will later add user ability to manipulate
-        while (subBeatCount < totalSubBeats) {
+        while (subBeatCount < getTotalSubBeats()) {
             songString = songString.concat(getRandNote()
                     + getOctaveNum(3, 5)
                     + getDurationNum(4)
@@ -150,31 +175,48 @@ public class BluesGenerator {
     }
 
     /* The more "human" melody generator:
-    * More heavily employs blues theory */
+    * More heavily employs blues theory
+    * First iteration assumes major blues */
     public Pattern getBluesLeadPattern() {
-        return null;
-    }
+        Intervals scale1 = MAJOR.setRoot(root);
+        Intervals scale2 = MAJOR_PENTATONIC.setRoot(root);
+        Intervals scale3 = MAJOR_BLUES.setRoot(root);
+        Intervals curScale = scale3;
+        String songString = root
+                +getOctaveNum(3, 5)
+                +getDurationNum(4)
+                + " ";
 
-    public Pattern getBackingPattern() {
-        ChordProgression cp = new ChordProgression("I IV V");
-        cp = cp.setKey(root)
-                .distribute("7%6")
-                .allChordsAs(determineForm());
-        Pattern root = cp.eachChordAs(replicate("$0ia60 ", 8))
-                .getPattern()
+        int measuresPlayed = 0;
+        while (subBeatCount < getTotalSubBeats()) {
+            if (measuresPlayed % 4 == 0) {
+                int randInt = StdRandom.uniform(3);
+                if (randInt == 0) {
+                    curScale = scale1;
+                } else if (randInt == 1) {
+                    curScale = scale2;
+                } else {
+                    curScale = scale3;
+                }
+            }
+            songString = songString.concat(
+                    curScale.getNthInterval(StdRandom.uniform(curScale.size()))
+                    + getOctaveNum(3, 5)
+                    + getDurationNum(1)
+                    + " ");
+            measuresPlayed += 1;
+        }
+
+        Pattern lead = new Pattern(songString)
                 .setVoice(voiceNum)
                 .setTempo(tempo)
-                .setInstrument(backingInstrument);
-        voiceNum+=1;
-        Pattern top = cp.eachChordAs(replicate("$2ia80 $2ia80 $3ia90 $2ia80 ", 2))
-                .getPattern()
-                .setVoice(voiceNum)
-                .setTempo(tempo)
-                .setInstrument(backingInstrument);
-        voiceNum+=1;
-        return root.add(top);
+                .setInstrument(leadInstrument);
+        voiceNum += 1;
 
+        return lead;
     }
+
+
     // replicates a given string n times
     private String replicate(String baseUnit, int n) {
         String result = "";
@@ -184,18 +226,21 @@ public class BluesGenerator {
         return result;
     }
 
+    private int getTotalSubBeats() {
+        int totalSubBeats = LOWEST_DIVISION
+                * measuresInForm
+                * ts.getBeatsPerMeasure()
+                / ts.getDurationForBeat();
+        return totalSubBeats;
+    }
+
     public static void main(String[] args) {
-        BluesGenerator b = new BluesGenerator(16, 160, "C",
+        BluesGenerator b = new BluesGenerator(32, 140, "C",
                 "electric_jazz_guitar", "overdriven_guitar");
-//        System.out.print(b.determineForm()); //do more extensive testing later!!!
 
         Player p = new Player();
-        Pattern rhythm = b.getBackingPattern();
-        Pattern lead = b.getRandomLeadPattern();
-        p.play(rhythm.add(lead));
-//        Pattern pat = new Intervals("1 3 5 9 11").setRoot("C").getPattern();
-//        System.out.print(pat);
-//        List<Note> s = new Intervals("1 5 10 15 17").setRoot("D3").getNotes();
-//        System.out.print(s);
+//        Pattern rhythm = b.getBackingPattern();
+        Pattern lead = b.getBluesLeadPattern();
+        p.play(lead);
     }
 }
