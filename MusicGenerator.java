@@ -4,7 +4,6 @@
  */
 import org.jfugue.theory.*; // sloppy wild card import
 import org.jfugue.pattern.*;
-import org.jfugue.player.*;
 import java.util.List;
 
 public abstract class MusicGenerator {
@@ -66,11 +65,11 @@ public abstract class MusicGenerator {
         }
     }
 
-    // Returns a random note duration, with numOptions limiting the options
-    // Note that the order of note values here is not highest to lowest or vice versa
-    // This is so decreasing numOptions will lead to more "solo" like phrasing
-    // i.e. faster paced notes
-    // Range of values: whole notes to 128th notes
+    /* Returns a random note duration, with numOptions limiting the options
+     Note that the order of note values here is not highest to lowest or vice versa
+     This is so decreasing numOptions will lead to more "solo" like phrasing
+     i.e. faster paced notes
+     Range of values: whole notes to 128th notes */
     protected String genNoteDuration(int numOptions) {
         int durationNum = StdRandom.uniform(0, numOptions);
         switch (durationNum) {
@@ -160,6 +159,26 @@ public abstract class MusicGenerator {
     protected abstract String determineForm();
     protected abstract Pattern getBackingPattern();
 
+    protected Pattern getRandomLeadPattern() {
+        String songString = root
+                + genNoteOctave(3, 5)
+                + genNoteDuration(4)
+                + " ";
+        // currently hardcode what the ranges/numOptions are; will later add user ability to manipulate
+        while (subBeatCount < getTotalSubBeats()) {
+            songString = songString.concat(genRandNote()
+                    + genNoteOctave(3, 5)
+                    + genNoteDuration(4)
+                    + " ");
+        }
+        Pattern lead = new Pattern(songString)
+                .setVoice(voiceNum)
+                .setTempo(tempo);
+        voiceNum += 1;
+
+        return lead;
+    }
+
     // scales should already have had the appropriate roots set in the subclasses
     // method calculates a lead pattern using appropriate scales
     protected Pattern getLeadPattern(Intervals[] scales) {
@@ -216,31 +235,13 @@ public abstract class MusicGenerator {
         return result;
     }
 
+    // calculates total number of sub-beats in a song
+    // sub-beats are based off the smallest note value
     protected double getTotalSubBeats() {
         double totalSubBeats = largestDivision
                 * measures
                 * ts.getBeatsPerMeasure()
                 / ts.getDurationForBeat();
         return totalSubBeats;
-    }
-
-    protected Pattern getRandomLeadPattern() {
-        String songString = root
-                + genNoteOctave(3, 5)
-                + genNoteDuration(4)
-                + " ";
-        // currently hardcode what the ranges/numOptions are; will later add user ability to manipulate
-        while (subBeatCount < getTotalSubBeats()) {
-            songString = songString.concat(genRandNote()
-                    + genNoteOctave(3, 5)
-                    + genNoteDuration(4)
-                    + " ");
-        }
-        Pattern lead = new Pattern(songString)
-                .setVoice(voiceNum)
-                .setTempo(tempo);
-        voiceNum += 1;
-
-        return lead;
     }
 }

@@ -5,14 +5,14 @@
 import org.jfugue.theory.*;
 import org.jfugue.pattern.*;
 import org.jfugue.player.*;
-import java.util.List;
-//import javax.sound.midi.Instrument;
 
 public class BluesGenerator extends MusicGenerator {
-    // how do you generalize instrumentation?
+    /* instrumentation is unique to each particular song
+    more instruments can be added here */
     private String backingInstrument;
     private String leadInstrument;
 
+    // ideally, a GUI would allow users to set these values
     public BluesGenerator(int measures, int tempo, String root,
                           String backingInstrument, String leadInstrument) {
         this.measures = measures;
@@ -26,8 +26,9 @@ public class BluesGenerator extends MusicGenerator {
         chordProgression = new ChordProgression("I IV V");
     }
 
-    /* Either uses common blues forms (8 bar, 12 bar, 16 bar) to return full chord progression
-    or randomly creates a chord progression (more interesting) */
+    /* Either uses common blues forms (8 bar, 12 bar, 16 bar)
+    to return full chord progression or randomly creates
+    a chord progression (more interesting) */
     @Override
     public String determineForm() {
         if (measures == 12) {
@@ -41,12 +42,14 @@ public class BluesGenerator extends MusicGenerator {
             for (int i = 0; i < measures; i++) {
                 int scaleDegree = StdRandom.uniform(3);
                 pattern = pattern.concat("$" + scaleDegree + " ");
-//                pattern = pattern.concat("$0 ");
             }
             return pattern;
         }
     }
 
+    /* Backing patterns are hard to generalize because of the different
+    * distribution of notes, and because of the different
+    * "base units" of the chord progressions */
     @Override
     public Pattern getBackingPattern() {
         chordProgression = chordProgression.setKey(root)
@@ -77,8 +80,7 @@ public class BluesGenerator extends MusicGenerator {
 
     /* The more "human" melody generator:
     * More heavily employs blues theory
-    * First iteration assumes major blues */
-
+    * This version assumes major blues */
     public Pattern getLeadPattern() {
         Intervals scale1 = MIXOLYDIAN_MODE.setRoot(root);
         Intervals scale2 = MAJOR_PENTATONIC.setRoot(root);

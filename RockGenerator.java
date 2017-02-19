@@ -7,9 +7,6 @@ import org.jfugue.theory.*;
 import org.jfugue.pattern.*;
 import org.jfugue.player.*;
 
-import javax.annotation.PostConstruct;
-import java.util.List;
-
 public class RockGenerator extends MusicGenerator {
     private String backingInstrument;
     private String leadInstrument;
@@ -23,13 +20,15 @@ public class RockGenerator extends MusicGenerator {
         this.leadInstrument = leadInstrument;
 
         this.ts = new TimeSignature(4, 4);
-        // Note that the following means the root always refers
-        // to the tonic in the MAJOR scale
-        // (Why do this? It makes it easier to choose scales
-        // based off the limitations of JFugue)
+        /* Note that the following means the root always refers
+         to the tonic in the MAJOR scale
+         (Why do this? It makes it easier to choose scales
+         based off the limitations of JFugue) */
         this.chordProgression = new ChordProgression("I V vi IV").setKey(root);
     }
 
+     /* randomly determines the 4 bar form
+     all are versions of the standard "I V vi IV" */
     @Override
     public String determineForm() {
         int randInt = StdRandom.uniform(0, 5);
@@ -48,6 +47,8 @@ public class RockGenerator extends MusicGenerator {
         }
     }
 
+    /* This looks really similar to the code in BluesGenerator's
+    version of this function...it probably has a way to be generalized */
     @Override
     public Pattern getBackingPattern() {
         chordProgression = chordProgression
