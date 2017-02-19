@@ -1,6 +1,6 @@
 /**
  * Created by Matt on 2/18/2017.
- * Granddaddy music generation class
+ * Supreme overlord music generation class
  */
 import org.jfugue.theory.*; // sloppy wild card import
 import org.jfugue.pattern.*;
@@ -15,7 +15,7 @@ public abstract class MusicGenerator {
     protected ChordProgression chordProgression;
 
     // doubles used to account for case where for whatever reason,
-    // largestDivision is not set to the largestDivision
+    // largestDivision is not actually set to the largest division
     protected double largestDivision = 32.0;
     protected double subBeatCount = 0;
 
@@ -159,6 +159,15 @@ public abstract class MusicGenerator {
     protected abstract String determineForm();
     protected abstract Pattern getBackingPattern();
     protected abstract Pattern getLeadPattern();
+
+    // replicates a given string n times
+    protected String replicate(String baseUnit, int n) {
+        String result = "";
+        for (int i = 0; i < n; i++) {
+            result = result.concat(baseUnit);
+        }
+        return result;
+    }
 
     protected double getTotalSubBeats() {
         double totalSubBeats = largestDivision
