@@ -75,28 +75,28 @@ public abstract class MusicGenerator {
         int durationNum = StdRandom.uniform(0, numOptions);
         switch (durationNum) {
             case 0:
-                subBeatCount += largestDivision/8;
+                subBeatCount += largestDivision / 8;
                 return "i";
             case 1:
-                subBeatCount += largestDivision/4;
+                subBeatCount += largestDivision / 4;
                 return "q";
             case 2:
-                subBeatCount += largestDivision/16;
+                subBeatCount += largestDivision / 16;
                 return "s";
             case 3:
-                subBeatCount += largestDivision/2;
+                subBeatCount += largestDivision / 2;
                 return "h";
             case 4:
-                subBeatCount += largestDivision/32;
+                subBeatCount += largestDivision / 32;
                 return "t";
             case 5:
                 subBeatCount += largestDivision;
                 return "w";
             case 6:
-                subBeatCount += largestDivision/64;
+                subBeatCount += largestDivision / 64;
                 return "x";
             default:
-                subBeatCount += largestDivision/128;
+                subBeatCount += largestDivision / 128;
                 return "o";
         }
     }
@@ -152,13 +152,60 @@ public abstract class MusicGenerator {
     public double getLargestDivision() {
         return largestDivision;
     }
+
     public void setLargestDivision(int num) {
         largestDivision = num;
     }
 
     protected abstract String determineForm();
     protected abstract Pattern getBackingPattern();
-    protected abstract Pattern getLeadPattern();
+
+    // scales should already have had the appropriate roots set in the subclasses
+    // method calculates a lead pattern using appropriate scales
+    protected Pattern getLeadPattern(Intervals[] scales) {
+        Intervals curScale = scales[0];
+        String songString = root
+                + genNoteOctave(4, 6)
+                + genNoteDuration(4)
+                + " ";
+
+        double subBeatsPerFourMeasures = 4 * largestDivision *
+                ts.getBeatsPerMeasure() / ts.getDurationForBeat();
+
+        while (subBeatCount < getTotalSubBeats())
+        {
+            // This is an eighth note's worth of leeway
+            if (subBeatCount % subBeatsPerFourMeasures < largestDivision / 8) {
+                // Every 4 bars, randomly pick which scale to use
+                // Also randomly change the octave of the scale
+                int randInt = StdRandom.uniform(scales.length);
+                curScale = scales[randInt];
+
+                // annoyingly roundabout way of getting the ToneString
+                // without the octave
+                Note rootCopy = curScale.getNotes().get(0);
+                byte rootValue = rootCopy.getValue();
+
+                curScale.setRoot(rootCopy.getToneStringWithoutOctave(rootValue)
+                        + genNoteOctave(3, 6));
+            }
+
+            // Convert the set of intervals into a List of Notes
+            List<Note> curScaleNotes = curScale.getNotes();
+
+            // Form the randomly chosen note
+            songString = songString.concat(
+                    curScaleNotes.get(StdRandom.uniform(curScale.size()))
+                            + genNoteDuration(4)
+                            + " ");
+        }
+
+        Pattern lead = new Pattern(songString)
+                .setVoice(voiceNum)
+                .setTempo(tempo);
+        voiceNum +=1;
+        return lead;
+    }
 
     // replicates a given string n times
     protected String replicate(String baseUnit, int n) {

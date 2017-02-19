@@ -23,7 +23,11 @@ public class RockGenerator extends MusicGenerator {
         this.leadInstrument = leadInstrument;
 
         this.ts = new TimeSignature(4, 4);
-        this.chordProgression = new ChordProgression("I V vi IV");
+        // Note that the following means the root always refers
+        // to the tonic in the MAJOR scale
+        // (Why do this? It makes it easier to choose scales
+        // based off the limitations of JFugue)
+        this.chordProgression = new ChordProgression("I V vi IV").setKey(root);
     }
 
     @Override
@@ -47,7 +51,6 @@ public class RockGenerator extends MusicGenerator {
     @Override
     public Pattern getBackingPattern() {
         chordProgression = chordProgression
-                .setKey(root)
                 .allChordsAs(determineForm())
                 .eachChordAs(replicate("$_ia30 ", 8));
         Pattern backingPattern = chordProgression
@@ -59,9 +62,22 @@ public class RockGenerator extends MusicGenerator {
         return backingPattern;
     }
 
-    @Override
     public Pattern getLeadPattern() {
-        return null;
+        // MIDI and interval theory trickery to get the relative minor root
+        Note minorRoot = new Note(new Note(root).getValue() - 3);
+
+        // what if we made an array of Intervals? hmm...
+        Intervals scale1 = MAJOR_PENTATONIC.setRoot(root);
+        Intervals scale2 = MINOR_PENTATONIC.setRoot(minorRoot);
+        Intervals scale3 = MAJOR.setRoot(root);
+        Intervals scale4 = MINOR.setRoot(minorRoot);
+        // minor blues and other "fancier" scales sound more interesting
+        // but they also have a tendency to create really dissonant intervals
+//        Intervals scale5 = MINOR_BLUES.setRoot(minorRoot);
+
+        Intervals[] scales = {scale1, scale2, scale3, scale4};
+
+        return super.getLeadPattern(scales).setInstrument(leadInstrument);
     }
 
     @Override
@@ -70,11 +86,12 @@ public class RockGenerator extends MusicGenerator {
     }
 
     public static void main(String[] args) {
-        RockGenerator r = new RockGenerator(24, 140, "A",
+        RockGenerator r = new RockGenerator(16, 140, "A",
                 "electric_muted_guitar", "distortion_guitar");
 
         Pattern rhythm = r.getBackingPattern();
-        Pattern lead = r.getRandomLeadPattern();
-        new Player().play(rhythm.repeat(6), lead);
-    }
+        Pattern lead = r.getLeadPattern();
+        System.out.println(lead);
+        new Player().play(rhythm.repeat(r.getMeasures() / 4), lead);
+ }
 }

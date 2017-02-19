@@ -78,58 +78,21 @@ public class BluesGenerator extends MusicGenerator {
     /* The more "human" melody generator:
     * More heavily employs blues theory
     * First iteration assumes major blues */
-    @Override
+
     public Pattern getLeadPattern() {
         Intervals scale1 = MIXOLYDIAN_MODE.setRoot(root);
         Intervals scale2 = MAJOR_PENTATONIC.setRoot(root);
         Intervals scale3 = MAJOR_BLUES.setRoot(root);
-        Intervals curScale = scale3;
-        String songString = root
-                +genNoteOctave(4, 6)
-                +genNoteDuration(4)
-                + " ";
 
-        int measuresPlayed = 0;
-        // ^current implementation of counting measures does not actually work
-        while (subBeatCount < getTotalSubBeats()) {
-            if (measuresPlayed % 4 == 0) {
-                // Every 4 bars, randomly pick which scale to use
-                // Also randomly change the octave of the scale
-                int randInt = StdRandom.uniform(3);
-                if (randInt == 0) {
-                    curScale = scale1;
-                } else if (randInt == 1) {
-                    curScale = scale2;
-                } else {
-                    curScale = scale3;
-                }
-                curScale.setRoot(root + genNoteOctave(3, 5));
-            }
+        Intervals[] scales = {scale1, scale2, scale3};
 
-            // Convert the set of intervals into a List of Notes
-            List<Note> curScaleNotes = curScale.getNotes();
-
-            // Form the randomly chosen note
-            songString = songString.concat(
-                    curScaleNotes.get(StdRandom.uniform(curScale.size()))
-                    + genNoteDuration(4)
-                    + " ");
-            measuresPlayed += 1;
-        }
-
-        Pattern lead = new Pattern(songString)
-                .setVoice(voiceNum)
-                .setTempo(tempo)
-                .setInstrument(leadInstrument);
-        voiceNum += 1;
-
-        return lead;
+        return super.getLeadPattern(scales).setInstrument(leadInstrument);
     }
 
     public static void main(String[] args) {
         // Hardcoded example
-        BluesGenerator b = new BluesGenerator(12, 140, "Bb",
-                "electric_jazz_guitar", "overdriven_guitar");
+        BluesGenerator b = new BluesGenerator(16, 140, "Bb",
+                "electric_jazz_guitar", "cello");
 
         Pattern rhythm = b.getBackingPattern();
         Pattern lead = b.getLeadPattern();
